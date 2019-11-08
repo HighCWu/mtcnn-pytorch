@@ -5,6 +5,13 @@ from .box_utils import nms, calibrate_box, get_image_boxes, convert_to_square
 from .first_stage import run_first_stage
 
 
+
+# LOAD MODELS
+pnet = PNet()
+rnet = RNet()
+onet = ONet()
+onet.eval()
+
 def detect_faces(image, min_face_size=20.0,
                  thresholds=[0.6, 0.7, 0.8],
                  nms_thresholds=[0.7, 0.7, 0.7]):
@@ -20,11 +27,6 @@ def detect_faces(image, min_face_size=20.0,
         bounding boxes and facial landmarks.
     """
 
-    # LOAD MODELS
-    pnet = PNet()
-    rnet = RNet()
-    onet = ONet()
-    onet.eval()
 
     # BUILD AN IMAGE PYRAMID
     width, height = image.size
@@ -79,8 +81,8 @@ def detect_faces(image, min_face_size=20.0,
         img_boxes = get_image_boxes(bounding_boxes, image, size=24)
         img_boxes = torch.FloatTensor(img_boxes)
         output = rnet(img_boxes)
-        offsets = output[0].data.numpy()  # shape [n_boxes, 4]
-        probs = output[1].data.numpy()  # shape [n_boxes, 2]
+        offsets = output[0].data.cpu().numpy()  # shape [n_boxes, 4]
+        probs = output[1].data.cpu().numpy()  # shape [n_boxes, 2]
 
         keep = np.where(probs[:, 1] > thresholds[1])[0]
         bounding_boxes = bounding_boxes[keep]
@@ -100,9 +102,9 @@ def detect_faces(image, min_face_size=20.0,
             return [], []
         img_boxes = torch.FloatTensor(img_boxes)
         output = onet(img_boxes)
-        landmarks = output[0].data.numpy()  # shape [n_boxes, 10]
-        offsets = output[1].data.numpy()  # shape [n_boxes, 4]
-        probs = output[2].data.numpy()  # shape [n_boxes, 2]
+        landmarks = output[0].data.cpu().numpy()  # shape [n_boxes, 10]
+        offsets = output[1].data.cpu().numpy()  # shape [n_boxes, 4]
+        probs = output[2].data.cpu().numpy()  # shape [n_boxes, 2]
 
         keep = np.where(probs[:, 1] > thresholds[2])[0]
         bounding_boxes = bounding_boxes[keep]
